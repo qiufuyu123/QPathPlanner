@@ -365,12 +365,17 @@ namespace QPathPlanner
     
     private void genCode()
     {
+      List<int> looked = new List<int>();
       destCodes = "";
       PathNode ?headNode=null;
-      foreach(PathNode node in mPathNodes.Values)
+      foreach(int i in mPathNodes.Keys)
       {
-        if (node.StartPoint)
-          headNode = node;
+        if (mPathNodes[i].StartPoint)
+        {
+          headNode = mPathNodes[i];
+          looked.Add(i);
+          break;
+        }
       }
       if(headNode==null)
       {
@@ -384,6 +389,7 @@ namespace QPathPlanner
       }
       while(true)
       {
+        
         if (headNode.Heading != -1)
         {
           destCodes += genTurn(headNode.Heading, 100);
@@ -391,6 +397,11 @@ namespace QPathPlanner
 
         if (headNode.NextNode != -1)
         {
+          if(looked.Contains(headNode.NextNode))
+          {
+            MessageBox.Show("The path contains a LOOP!\nStop generating!");
+            break;
+          }
           PathNode next = mPathNodes[headNode.NextNode];
           double dx = next.PosX - headNode.PosX;
           double dy = next.PosY - headNode.PosY;
@@ -402,6 +413,7 @@ namespace QPathPlanner
             angle = -(360 - angle);
           destCodes += genTurn(angle, 100);
           destCodes += genFwd(angle, distance, 100);
+          looked.Add(headNode.NextNode);
           headNode = next;
           //destCodes += "\n//" + dx.ToString() + "," + dy.ToString() + "\n";
 

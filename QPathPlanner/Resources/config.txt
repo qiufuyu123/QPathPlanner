@@ -1,0 +1,9 @@
+{
+    "abs":{
+
+    },
+    "delta":{
+        "turn":"new_gyro_p_turn($angle,$speed)",
+        "fwd":"improved_pid_move($distance,$angle,$speed)"
+    }
+}

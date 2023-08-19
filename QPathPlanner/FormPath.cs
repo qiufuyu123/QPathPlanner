@@ -119,7 +119,7 @@ namespace QPathPlanner
     private void cancelConnet()
     {
       toolStatus.BackColor = Color.White;
-      toolStatus.Text = "无";
+      toolStatus.Text = "wait...";
       isSetConnet = false;
     }
 
@@ -132,14 +132,14 @@ namespace QPathPlanner
       {
         if(isChangePos)
         {
-          MessageBox.Show("请选择其他点!", "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
+          MessageBox.Show("Please choose another point!", "error", MessageBoxButtons.OK, MessageBoxIcon.Error);
           return;
         }
         if(isSetConnet && selectedIdx !=-1)
         {
           if(idx == selectedIdx)
           {
-            MessageBox.Show("路径不可以和自己相连！", "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            MessageBox.Show("Cannot connect to the node itself！", "error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             cancelConnet();
             return;
           }
@@ -198,7 +198,7 @@ namespace QPathPlanner
       }
     }
 
-    private void 删除此节点ToolStripMenuItem_Click(object sender, EventArgs e)
+    private void DelNodeToolStripMenuItem_Click(object sender, EventArgs e)
     {
       cleanRelativeNode();
       mPathNodes.RemoveAt(selectedIdx);
@@ -206,28 +206,28 @@ namespace QPathPlanner
       pictureBox1.Invalidate();
     }
 
-    private void 设置连接ToolStripMenuItem_Click(object sender, EventArgs e)
+    private void ConnetToolStripMenuItem_Click(object sender, EventArgs e)
     {
       if(mPathNodes.Count<=1)
       {
-        MessageBox.Show("必须至少存在 两个 路径点才可设置连接路径！","错误",MessageBoxButtons.OK,MessageBoxIcon.Error);
+        MessageBox.Show("A path requires at least 2 nodes!","error",MessageBoxButtons.OK,MessageBoxIcon.Error);
       }
       if(isSetConnet)
       {
-        MessageBox.Show("你已经点过了，按 ESC 取消", "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        MessageBox.Show("Already to connect a path!\nPress ESC to cancel", "error", MessageBoxButtons.OK, MessageBoxIcon.Error);
       }
       isSetConnet = true;
-      toolStatus.Text = "请选择第二个点(按ESC取消)";
+      toolStatus.Text = "Please choose the second point(Press ESC to cancel)";
       toolStatus.BackColor = Color.Yellow;
     }
 
-    private void 设置角度ToolStripMenuItem_Click(object sender, EventArgs e)
+    private void AngleToolStripMenuItem_Click(object sender, EventArgs e)
     {
-      string str = Microsoft.VisualBasic.Interaction.InputBox("请输入一个整数!\n(输入 -1 即表示无角度要求)", "设置行程结束角度", mPathNodes[selectedIdx].Heading.ToString());
+      string str = Microsoft.VisualBasic.Interaction.InputBox("Please input an integer!\n(input -1 means NO angle required!)", "Set the final status angle", mPathNodes[selectedIdx].Heading.ToString());
       int v = -1;
       if(!int.TryParse(str,out v))
       {
-        MessageBox.Show("输入格式错误！", "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        MessageBox.Show("Bad Format！", "error", MessageBoxButtons.OK, MessageBoxIcon.Error);
       }
       else
       {
@@ -258,26 +258,26 @@ namespace QPathPlanner
       }
     }
 
-    private void 删除连接ToolStripMenuItem_Click(object sender, EventArgs e)
+    private void DeleteConnectToolStripMenuItem_Click(object sender, EventArgs e)
     {
       mPathNodes[selectedIdx].NextNode = -1;
       pictureBox1.Invalidate();
     }
 
-    private void 修改位置ToolStripMenuItem_Click(object sender, EventArgs e)
+    private void ChangePosToolStripMenuItem_Click(object sender, EventArgs e)
     {
       if(isChangePos)
       {
-        MessageBox.Show("已经进入 修改位置 模式！请选择新的位置或按ESC取消!", "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        MessageBox.Show("Already prepared to change position!\nPress ESC to cancel it!", "error", MessageBoxButtons.OK, MessageBoxIcon.Error);
       }else
       {
-        toolStatus.Text = "请选择新的点(按ESC取消)";
+        toolStatus.Text = "Choose a new point(Press ESC to cancel)";
         toolStatus.BackColor = Color.Yellow;
         isChangePos = true;
       }
     }
 
-    private void 设为起点ToolStripMenuItem_Click(object sender, EventArgs e)
+    private void AsStartToolStripMenuItem_Click(object sender, EventArgs e)
     {
       foreach(PathNode node in mPathNodes)
       {
@@ -305,7 +305,7 @@ namespace QPathPlanner
         savedPath = fname;
       }
       File.WriteAllText(fname, JsonSerializer.Serialize(mPathNodes));
-      MessageBox.Show("保存成功！");
+      MessageBox.Show("File Saved!");
      
     }
 
@@ -314,10 +314,18 @@ namespace QPathPlanner
       if (openFileDialog1.ShowDialog() == DialogResult.Cancel)
         return;
       string fname = openFileDialog1.FileName.ToString();
-      List<PathNode>?tmp = JsonSerializer.Deserialize<List<PathNode>>(File.ReadAllText(fname));
+      List<PathNode>?tmp = null;
+      try
+      {
+        tmp= JsonSerializer.Deserialize<List<PathNode>>(File.ReadAllText(fname));
+      }
+      catch
+      {
+        tmp = null;
+      }
       if(tmp == null)
       {
-        MessageBox.Show("文件格式错误！", "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        MessageBox.Show("Bad Format！", "error", MessageBoxButtons.OK, MessageBoxIcon.Error);
       }
       else
       {
@@ -349,20 +357,21 @@ namespace QPathPlanner
       }
       if(headNode==null)
       {
-        MessageBox.Show("请设置 开始 节点！");
+        MessageBox.Show("Please set START node！");
         return;
       }
       if(headNode.NextNode==-1)
       {
-        MessageBox.Show("代码生成需要存在至少一条路径！");
+        MessageBox.Show("Code Generation requires at least ONE path!");
         return;
       }
-      while(headNode.NextNode!=-1)
+      while(true)
       {
         if (headNode.Heading != -1)
         {
           destCodes += genTurn(headNode.Heading, 100);
         }
+
         if (headNode.NextNode != -1)
         {
           PathNode next = mPathNodes[headNode.NextNode];
@@ -379,6 +388,9 @@ namespace QPathPlanner
           headNode = next;
           //destCodes += "\n//" + dx.ToString() + "," + dy.ToString() + "\n";
 
+        }else
+        {
+          break;
         }
       }
      
@@ -399,65 +411,9 @@ namespace QPathPlanner
       Application.Exit();
     }
 
-    private void contextMenuStrip1_Opening(object sender, System.ComponentModel.CancelEventArgs e)
+    private void button4_Click(object sender, EventArgs e)
     {
-
-    }
-    private static void AppLang(ToolStripMenuItem item, System.ComponentModel.ComponentResourceManager resources)
-    {
-      if (item is ToolStripMenuItem)
-      {
-        resources.ApplyResources(item, item.Name);
-        ToolStripMenuItem tsmi = (ToolStripMenuItem)item;
-        if (tsmi.DropDownItems.Count > 0)
-        {
-          foreach (ToolStripMenuItem c in tsmi.DropDownItems)
-          {
-            AppLang(c, resources);
-          }
-        }
-      }
-    }
-    private static void AppLang(Control control, System.ComponentModel.ComponentResourceManager resources)
-    {
-      if (control is MenuStrip)
-      {
-        resources.ApplyResources(control, control.Name);
-        MenuStrip ms = (MenuStrip)control;
-        if (ms.Items.Count > 0)
-        {
-          foreach (ToolStripMenuItem c in ms.Items)
-          {
-            AppLang(c, resources);
-          }
-        }
-      }
-
-      foreach (Control c in control.Controls)
-      {
-        resources.ApplyResources(c, c.Name);
-        AppLang(c, resources);
-      }
-    }
-
-    private void englishToolStripMenuItem_Click(object sender, EventArgs e)
-    {
-      Thread.CurrentThread.CurrentUICulture = new CultureInfo("en-GB");//中文是zh
-      ComponentResourceManager resources = new ComponentResourceManager(typeof(FormPath));
-      
-      
-      resources.ApplyResources(this, "$this");
-      
-
-    }
-
-    private void chineseToolStripMenuItem_Click(object sender, EventArgs e)
-    {
-      Thread.CurrentThread.CurrentUICulture = new CultureInfo("zh");//中文是zh
-      ComponentResourceManager resources = new ComponentResourceManager(typeof(FormPath));
-      
-      
-      resources.ApplyResources(this, "$this");
+      MessageBox.Show("This program is desined by qiufuyu\nFrom 123A SFLS(high school)\nContact Me: qiufuyutony@outlook.com\nGithub: qiufuyu123", "About", MessageBoxButtons.OK, MessageBoxIcon.Question);
     }
   }
 }

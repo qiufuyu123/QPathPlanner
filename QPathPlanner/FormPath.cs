@@ -31,9 +31,19 @@ namespace QPathPlanner
     private double mCursorY = 0;
     private double mScaleK = 4032 / 144;
     private Random r = new Random();
-    private List<PathNode> mPathNodes = new List<PathNode>();
+    private Dictionary<int,PathNode> mPathNodes = new Dictionary<int,PathNode>();
     private Graphics mTopGraph;
 
+    private int genIdx()
+    {
+      Random random = new Random();
+      while(true)
+      {
+        int v = random.Next(0, 65536);
+        if (!mPathNodes.ContainsKey(v))
+          return v;
+      }
+    }
     private double coordRevX(double x)
     {
       return (x + 72) * mScaleK * (double)pictureBox1.Width / (double)pictureBox1.Image.Width;
@@ -45,9 +55,11 @@ namespace QPathPlanner
 
     private void updateNodes(Graphics g)
     {
-      for(int i = 0;i<mPathNodes.Count;i++)
+      foreach(int i in mPathNodes.Keys)
       {
-        PathNode node = mPathNodes[i];
+        PathNode? node = mPathNodes[i];
+        if (node == null)
+          continue;
         int realx = (int)coordRevX(node.PosX);
         int realy = (int)coordRevY(node.PosY);
         Color color = Color.FromArgb(node.color[0], node.color[1], node.color[2]);
@@ -75,7 +87,7 @@ namespace QPathPlanner
 
     private int isNodeExist(int x,int y)
     {
-      for(int i =0;i<mPathNodes.Count;i++)
+      foreach(int i in mPathNodes.Keys)
       {
         if (mPathNodes[i].PosX == x && mPathNodes[i].PosY == y)
           return i;
@@ -159,6 +171,8 @@ namespace QPathPlanner
       }
       if (e.Button == MouseButtons.Left)
       {
+        if (isSetConnet)
+          return;
         if (isChangePos && selectedIdx != -1)
         {
           mPathNodes[selectedIdx].PosX = (int)mCursorX;
@@ -178,7 +192,7 @@ namespace QPathPlanner
         Color cc = Color.FromArgb(c[0], c[1], c[2]);
         mGraph.FillEllipse(new SolidBrush(cc), (int)realx - 10, (int)realy - 10, 20, 20);
         mGraph.Dispose();
-        mPathNodes.Add(new PathNode((int)mCursorX, (int)mCursorY, c));
+        mPathNodes.Add(genIdx(),new PathNode((int)mCursorX, (int)mCursorY, c));
         //mGraph.Dispose();
       }
       else if(selectedIdx!=-1)
@@ -189,7 +203,7 @@ namespace QPathPlanner
 
     private void cleanRelativeNode()
     {
-      foreach(PathNode node in mPathNodes)
+      foreach(PathNode node in mPathNodes.Values)
       {
         if(node.NextNode == selectedIdx)
         {
@@ -201,24 +215,27 @@ namespace QPathPlanner
     private void DelNodeToolStripMenuItem_Click(object sender, EventArgs e)
     {
       cleanRelativeNode();
-      mPathNodes.RemoveAt(selectedIdx);
+      mPathNodes.Remove(selectedIdx);
       selectedIdx = -1;
       pictureBox1.Invalidate();
     }
 
     private void ConnetToolStripMenuItem_Click(object sender, EventArgs e)
     {
-      if(mPathNodes.Count<=1)
+      if (mPathNodes.Count <= 1)
       {
-        MessageBox.Show("A path requires at least 2 nodes!","error",MessageBoxButtons.OK,MessageBoxIcon.Error);
+        MessageBox.Show("A path requires at least 2 nodes!", "error", MessageBoxButtons.OK, MessageBoxIcon.Error);
       }
-      if(isSetConnet)
+      else if (isSetConnet)
       {
         MessageBox.Show("Already to connect a path!\nPress ESC to cancel", "error", MessageBoxButtons.OK, MessageBoxIcon.Error);
       }
-      isSetConnet = true;
-      toolStatus.Text = "Please choose the second point(Press ESC to cancel)";
-      toolStatus.BackColor = Color.Yellow;
+      else
+      {
+        isSetConnet = true;
+        toolStatus.Text = "Please choose the second point(Press ESC to cancel)";
+        toolStatus.BackColor = Color.Yellow;
+      }
     }
 
     private void AngleToolStripMenuItem_Click(object sender, EventArgs e)
@@ -279,7 +296,7 @@ namespace QPathPlanner
 
     private void AsStartToolStripMenuItem_Click(object sender, EventArgs e)
     {
-      foreach(PathNode node in mPathNodes)
+      foreach(PathNode node in mPathNodes.Values)
       {
         if(node.StartPoint)
         {
@@ -314,10 +331,10 @@ namespace QPathPlanner
       if (openFileDialog1.ShowDialog() == DialogResult.Cancel)
         return;
       string fname = openFileDialog1.FileName.ToString();
-      List<PathNode>?tmp = null;
+      Dictionary<int,PathNode>?tmp = null;
       try
       {
-        tmp= JsonSerializer.Deserialize<List<PathNode>>(File.ReadAllText(fname));
+        tmp= JsonSerializer.Deserialize<Dictionary<int,PathNode>>(File.ReadAllText(fname));
       }
       catch
       {
@@ -350,7 +367,7 @@ namespace QPathPlanner
     {
       destCodes = "";
       PathNode ?headNode=null;
-      foreach(PathNode node in mPathNodes)
+      foreach(PathNode node in mPathNodes.Values)
       {
         if (node.StartPoint)
           headNode = node;

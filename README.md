@@ -2,6 +2,9 @@
 
 Welcome to QPathPlanner! This Open-source winform(c#) project aims to create a convenient tool to plan the autonomous path for VEX robots  
 
+**Download program:** https://github.com/qiufuyu123/QPathPlanner/tags  
+**Build From Source Code:** Visual Studio(2022) C#(.net6)
+
 QPathPlanner gets its inspiration from FRC's PathPlanner  
 Feel free to open any issues, or contact me on `qiufuyutony@outlook.com`
 
